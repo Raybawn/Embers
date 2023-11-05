@@ -162,3 +162,22 @@ function gameLoop() {
 
 // Start the game loop
 gameLoop();
+
+let frameCount = 0;
+let lastUpdateTime = Date.now();
+let fpsElement = document.getElementById("fps");
+
+function countFrames() {
+  frameCount++;
+  let now = Date.now();
+  let delta = now - lastUpdateTime;
+  if (delta >= 1000) {
+    // Every second
+    fpsElement.textContent = `${frameCount} FPS`;
+    frameCount = 0;
+    lastUpdateTime = now;
+  }
+  requestAnimationFrame(countFrames);
+}
+
+requestAnimationFrame(countFrames);
