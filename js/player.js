@@ -6,9 +6,11 @@ export class Player {
   constructor(x, y) {
     this.x = x;
     this.y = y;
+    this.width = 50;
+    this.height = 50;
     this.speed = 5;
     this.direction = { up: false, down: false, left: false, right: false };
-    this.shieldHealth = 0;
+    this.shieldHealth = 100;
     this.health = 100;
     this.bullets = [];
     this.shootInterval = 30; // The player will shoot every 30 frames
@@ -21,9 +23,9 @@ export class Player {
 
     // Draw blue border if shielded
     if (this.shieldHealth > 0) {
-      ctx.strokeStyle = "blue";
+      ctx.strokeStyle = "lightblue";
       ctx.lineWidth = 5;
-      ctx.strokeRect(this.x, this.y, 50, 50);
+      ctx.strokeRect(this.x, this.y, this.width, this.height);
     }
 
     // Draw bullets
@@ -41,8 +43,33 @@ export class Player {
     ctx.strokeRect(45, 10, 100, 20); // Move the border to the right
 
     ctx.fillStyle = "black";
-    ctx.font = "20px Arial";
+    ctx.font = "20px 'Pixelify Sans'";
     ctx.fillText("HP", 10, 27); // Draw "HP" text
+  }
+
+  drawShieldBar(ctx) {
+    ctx.fillStyle = "lightblue";
+    ctx.fillRect(45, 40, this.shieldHealth, 20); // Move the shield bar to the right
+
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(45, 40, 100, 20); // Move the border to the right
+
+    ctx.fillStyle = "black";
+    ctx.font = "20px 'Pixelify Sans'";
+    ctx.fillText("SH", 10, 57); // Draw "Shield" text
+  }
+
+  takeDamage(amount) {
+    // check if player has shield active, if yes reduce shield health, else reduce player health
+    if (this.shieldHealth > 0) {
+      this.shieldHealth -= amount;
+      if (this.shieldHealth < 0) this.shieldHealth = 0; // Ensure shield health doesn't go below 0
+      return;
+    } else {
+      this.health -= amount;
+      if (this.health < 0) this.health = 0; // Ensure health doesn't go below 0
+    }
   }
 
   update(canvasWidth, canvasHeight) {

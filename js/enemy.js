@@ -1,22 +1,41 @@
+import { checkCollision } from "./utils.js";
+
 // JavaScript
 export class Enemy {
   constructor(x, y, dx, dy) {
     this.x = x;
     this.y = y;
+    this.width = 20;
+    this.height = 20;
     this.dx = dx;
     this.dy = dy;
     this.speed = 2;
+    this.damage = 10;
+    this.health = 10;
+    this.destroyed = false;
   }
 
   draw(ctx) {
     ctx.fillStyle = "red";
-    ctx.fillRect(this.x, this.y, 20, 20);
+    ctx.fillRect(this.x, this.y, this.width, this.height);
   }
 
-  update(playerX, playerY) {
+  takeDamage(amount) {
+    this.health -= amount;
+    if (this.health <= 0) {
+      this.destroy();
+    }
+  }
+
+  destroy() {
+    // Remove this enemy from the enemies array
+    this.destroyed = true;
+  }
+
+  update(player) {
     // Calculate direction towards player
-    let dx = playerX - this.x;
-    let dy = playerY - this.y;
+    let dx = player.x - this.x;
+    let dy = player.y - this.y;
     let length = Math.sqrt(dx * dx + dy * dy);
     dx /= length;
     dy /= length;
@@ -24,5 +43,11 @@ export class Enemy {
     // Update position
     this.x += dx * this.speed;
     this.y += dy * this.speed;
+
+    // check for collision with player
+    if (checkCollision(this, player)) {
+      // Collision detected, damage the player
+      player.takeDamage(this.damage);
+    }
   }
 }
