@@ -1,8 +1,9 @@
 import { checkCollision } from "./utils.js";
+import { PowerUp } from "./powerup.js";
 
 // JavaScript
 export class Enemy {
-  constructor(x, y, dx, dy) {
+  constructor(x, y, dx, dy, game) {
     this.x = x;
     this.y = y;
     this.width = 20;
@@ -16,6 +17,8 @@ export class Enemy {
     this.damage = 10;
     this.health = 10;
     this.destroyed = false;
+    this.dropChance = 0.5;
+    this.game = game;
   }
 
   draw(ctx) {
@@ -32,7 +35,25 @@ export class Enemy {
 
   destroy() {
     // Remove this enemy from the enemies array
+    console.log("Enemy destroyed!");
     this.destroyed = true;
+    this.dropItem();
+  }
+
+  dropItem() {
+    // Generate a random number between 0 and 1
+    let randomNumber = Math.random();
+
+    // If the random number is less than this.dropChance, drop an item
+    if (randomNumber < this.dropChance) {
+      // Create a new power-up
+      let powerUp = new PowerUp("increaseSpeed", this.x, this.y);
+
+      // Add the power-up to the powerUps array
+      this.game.addPowerUp(powerUp);
+
+      console.log("Powerup dropped");
+    }
   }
 
   update(player) {

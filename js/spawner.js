@@ -1,7 +1,14 @@
 import { Enemy } from "./enemy.js";
 
 export class Spawner {
-  constructor(spawnInterval, spawnRateIncrease, canvas, player, gameStarted) {
+  constructor(
+    spawnInterval,
+    spawnRateIncrease,
+    canvas,
+    player,
+    gameStarted,
+    game
+  ) {
     this.spawnInterval = spawnInterval;
     this.spawnRateIncrease = spawnRateIncrease;
     this.spawnRateIncreaseIntervalId = null;
@@ -10,10 +17,10 @@ export class Spawner {
     this.player = player;
     this.spawning = true;
     this.gameStarted = gameStarted;
+    this.game = game;
   }
 
   shouldSpawn() {
-    console.log("Checking if should spawn...");
     // Check if enough time has passed since the last spawn
     if (Date.now() - this.lastSpawnTime >= this.spawnInterval) {
       this.lastSpawnTime = Date.now(); // Update the time of the last spawn
@@ -29,8 +36,6 @@ export class Spawner {
   spawnEnemy() {
     if (!this.spawning || !this.gameStarted) return null;
 
-    console.log("Spawning enemy...");
-
     // Calculate spawn position
     let x = Math.random() < 0.5 ? -50 : this.canvas.width + 50;
     let y = Math.random() * this.canvas.height;
@@ -43,7 +48,7 @@ export class Spawner {
     dy /= length;
 
     // Create a new enemy and return it
-    return new Enemy(x, y, dx, dy);
+    return new Enemy(x, y, dx, dy, this.game);
   }
 
   setGameStarted(gameStarted) {
@@ -79,7 +84,9 @@ export class Spawner {
 
   increaseSpawnRate() {
     // console for how much the spawnrate increases
-    console.log("Increasing spawn rate by " + this.spawnRateIncrease + "%");
+    console.log(
+      "Increasing spawn rate by " + this.spawnRateIncrease * 100 + "%"
+    );
     this.spawnInterval *= 1 - this.spawnRateIncrease;
   }
 }

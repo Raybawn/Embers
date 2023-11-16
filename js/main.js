@@ -3,6 +3,7 @@ import { Level } from "./level.js";
 import { Player } from "./player.js";
 import { Spawner } from "./spawner.js";
 import { checkCollision } from "./utils.js";
+import { Game } from "./game.js";
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -17,9 +18,11 @@ window.addEventListener("resize", () => {
   canvas.height = window.innerHeight;
 });
 
+let game = new Game();
 let player = new Player(canvas.width / 2, canvas.height / 2);
 let level = new Level(canvas, ctx, 100);
 let enemies = [];
+let powerUps = [];
 let paused = false;
 let gameStarted = false;
 
@@ -94,6 +97,7 @@ function startGame() {
 
   // Clear enemies array
   enemies = [];
+  powerUps = [];
 
   // Start spawning enemies
   spawner.start();
@@ -166,10 +170,15 @@ function endGame() {
 }
 
 let spawnRateIncrease = 0.1; // Adjust this value as needed
-let spawner = new Spawner(2000, spawnRateIncrease, canvas, player, gameStarted);
-
-// Start increasing the spawn rate every 30 seconds
-spawner.startIncreasingSpawnRate();
+let spawner = new Spawner(
+  2000,
+  spawnRateIncrease,
+  canvas,
+  player,
+  gameStarted,
+  game
+); // 3. Pass the Game instance to the Spawner constructor
+spawner.stopIncreasingSpawnRate();
 
 // Game loop
 function gameLoop() {
@@ -181,7 +190,12 @@ function gameLoop() {
     player.update(canvas.width, canvas.height);
     player.draw(ctx);
 
-    // debug spawner
+    // powerUps
+    for (let i = 0; i < game.powerUps.length; i++) {
+      let powerUp = game.powerUps[i];
+      powerUp.draw(ctx);
+    }
+
     let shouldSpawn = spawner.shouldSpawn();
 
     // Spawn enemies
@@ -206,7 +220,6 @@ function gameLoop() {
 
           // If enemy's health reaches 0, destroy the enemy
           if (hitEnemy.health <= 0) {
-            console.log("Enemy destroyed!");
             hitEnemy.destroyed = true;
           }
         }
@@ -215,10 +228,10 @@ function gameLoop() {
       // Check for collision with player
       if (checkCollision(player, enemy)) {
         if (player.health < 0) player.health = 0; // Ensure health doesn't go below 0
-        enemy.destroyed = true;
 
-        // Log collision to the console
-        console.log("Collision detected!");
+        // damage the enemy
+        enemy.takeDamage(enemy.health);
+        enemy.destroyed = true;
       }
 
       // Increment the score if the enemy is destroyed
@@ -270,6 +283,9 @@ startButton.addEventListener("click", function () {
   startButton.remove();
 
   startGame();
+
+  // Start increasing the spawn rate every 30 seconds
+  spawner.startIncreasingSpawnRate();
 
   // Start the game loop
   gameLoop();
