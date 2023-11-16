@@ -97,6 +97,7 @@ function startGame() {
 
   // Start spawning enemies
   spawner.start();
+  spawner.startIncreasingSpawnRate();
 
   // Start the game loop again
   gameLoop();
@@ -161,10 +162,14 @@ function endGame() {
 
   // Stop spawning enemies
   spawner.stop();
+  spawner.stopIncreasingSpawnRate();
 }
 
-let spawnRateIncrease = 0.01; // Adjust this value as needed
+let spawnRateIncrease = 0.1; // Adjust this value as needed
 let spawner = new Spawner(2000, spawnRateIncrease, canvas, player, gameStarted);
+
+// Start increasing the spawn rate every 30 seconds
+spawner.startIncreasingSpawnRate();
 
 // Game loop
 function gameLoop() {

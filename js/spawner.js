@@ -4,6 +4,7 @@ export class Spawner {
   constructor(spawnInterval, spawnRateIncrease, canvas, player, gameStarted) {
     this.spawnInterval = spawnInterval;
     this.spawnRateIncrease = spawnRateIncrease;
+    this.spawnRateIncreaseIntervalId = null;
     this.lastSpawnTime = Date.now();
     this.canvas = canvas;
     this.player = player;
@@ -55,5 +56,30 @@ export class Spawner {
 
   stop() {
     this.spawning = false;
+  }
+
+  setSpawnRateIncrease(spawnRateIncrease) {
+    this.spawnRateIncrease = spawnRateIncrease;
+  }
+
+  startIncreasingSpawnRate(interval = 30000) {
+    this.stopIncreasingSpawnRate();
+    this.spawnRateIncreaseIntervalId = setInterval(
+      () => this.increaseSpawnRate(),
+      interval
+    );
+  }
+
+  stopIncreasingSpawnRate() {
+    if (this.spawnRateIncreaseIntervalId !== null) {
+      clearInterval(this.spawnRateIncreaseIntervalId);
+      this.spawnRateIncreaseIntervalId = null;
+    }
+  }
+
+  increaseSpawnRate() {
+    // console for how much the spawnrate increases
+    console.log("Increasing spawn rate by " + this.spawnRateIncrease + "%");
+    this.spawnInterval *= 1 - this.spawnRateIncrease;
   }
 }
