@@ -9,7 +9,10 @@ export class Enemy {
     this.height = 20;
     this.dx = dx;
     this.dy = dy;
-    this.speed = 2;
+    this.speedMax = 3;
+    this.speedMin = 1;
+    this.speed =
+      Math.random() * (this.speedMax - this.speedMin) + this.speedMin;
     this.damage = 10;
     this.health = 10;
     this.destroyed = false;

@@ -1,12 +1,11 @@
 // JavaScript
 import { Level } from "./level.js";
 import { Player } from "./player.js";
-import { Enemy } from "./enemy.js";
+import { Spawner } from "./spawner.js";
 import { checkCollision } from "./utils.js";
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-let gameStarted = false;
 
 // Set initial canvas size
 canvas.width = window.innerWidth - 12;
@@ -20,9 +19,9 @@ window.addEventListener("resize", () => {
 
 let player = new Player(canvas.width / 2, canvas.height / 2);
 let level = new Level(canvas, ctx, 100);
-let spawnInterval;
 let enemies = [];
 let paused = false;
+let gameStarted = false;
 
 // Draw the level
 level.draw();
@@ -47,15 +46,15 @@ window.addEventListener("keydown", (e) => {
       player.direction.right = true;
       break;
     case " ":
-      player.useItem();
+      // player.useItem();
       break;
     case "Escape":
       if (paused) {
         // Game is being unpaused
-        startSpawningEnemies();
+        spawner.start();
       } else {
         // Game is being paused
-        stopSpawningEnemies();
+        spawner.stop();
       }
       paused = !paused;
       break;
@@ -83,111 +82,48 @@ window.addEventListener("keyup", (e) => {
   }
 });
 
-// Function to spawn an enemy
-function spawnEnemy() {
-  if (!gameStarted) return; // Don't spawn enemies if the game hasn't started
-  // Calculate spawn position
-  let x = Math.random() < 0.5 ? -50 : canvas.width + 50;
-  let y = Math.random() * canvas.height;
+// Start the game
+function startGame() {
+  gameStarted = true;
+  spawner.setGameStarted(gameStarted); // Update the Spawner's gameStarted property
 
-  // Calculate direction towards player
-  let dx = player.x - x;
-  let dy = player.y - y;
-  let length = Math.sqrt(dx * dx + dy * dy);
-  dx /= length;
-  dy /= length;
+  // Reset player's health
+  player.health = 100;
+  player.shieldHealth = 100;
+  player.score = 0;
 
-  // Create enemy and add to array
-  enemies.push(new Enemy(x, y, dx, dy));
+  // Clear enemies array
+  enemies = [];
+
+  // Start spawning enemies
+  spawner.start();
+
+  // Start the game loop again
+  gameLoop();
 }
 
-function startSpawningEnemies() {
-  spawnInterval = setInterval(spawnEnemy, 2000);
-}
+// End the game
+function endGame() {
+  gameStarted = false;
+  spawner.setGameStarted(gameStarted); // Update the Spawner's gameStarted property
 
-function stopSpawningEnemies() {
-  clearInterval(spawnInterval);
-}
-
-// Start spawning enemies when the game starts
-startSpawningEnemies();
-
-// Game loop
-function gameLoop() {
-  if (!paused) {
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Update and draw the player
-    player.update(canvas.width, canvas.height);
-    player.draw(ctx);
-
-    // Update and draw enemies
-    enemies = enemies.filter((enemy) => {
-      enemy.update(player);
-      enemy.draw(ctx);
-
-      // Check for collision with player
-      if (checkCollision(player, enemy)) {
-        if (player.health < 0) player.health = 0; // Ensure health doesn't go below 0
-
-        // Log collision to the console
-        console.log("Collision detected!");
-
-        return false;
-      }
-
-      // Check for collisions between bullets and enemies
-      for (let bullet of player.bullets) {
-        if (bullet.checkCollisions(enemies)) {
-          bullet.destroy();
-          enemy.health -= 10; // Enemy takes damage
-
-          // If enemy's health reaches 0, destroy the enemy
-          if (enemy.health <= 0) {
-            console.log("Enemy destroyed!");
-            return false;
-          }
-        }
-      }
-
-      return true;
-    });
-
-    // Draw the player's health and shield bar
-    player.drawHealthBar(ctx);
-    player.drawShieldBar(ctx);
-
-    // If the player's health reaches 0, display the game over screen
-    if (player.health <= 0) {
-      displayGameOverScreen();
-      return; // Stop the game loop
-    }
-  }
-
-  // Draw "Paused" text if the game is paused
-  if (paused) {
-    ctx.fillStyle = "black";
-    ctx.font = "30px 'Pixelify Sans'";
-    ctx.textAlign = "left";
-    ctx.fillText("⏸️ Paused", 10, canvas.height - 10);
-  }
-
-  player.bullets = player.bullets.filter((bullet) => !bullet.destroyed);
-
-  // Call the game loop again on the next frame
-  requestAnimationFrame(gameLoop);
-}
-
-function displayGameOverScreen() {
   // Draw "Game Over" text
   ctx.fillStyle = "red";
   ctx.font = "60px 'Pixelify Sans'";
   ctx.textAlign = "center";
   ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2);
 
+  ctx.fillStyle = "black";
+  ctx.font = "20px 'Pixelify Sans'";
+  ctx.textAlign = "center";
+  ctx.fillText(
+    "Score: " + player.score,
+    canvas.width / 2,
+    canvas.height / 2 + 50
+  ); // Display the score
+
   // Draw "Restart Game" button
-  let buttonWidth = 200;
+  let buttonWidth = 230;
   let buttonHeight = 50;
   let buttonX = (canvas.width - buttonWidth) / 2;
   let buttonY = (canvas.height - buttonHeight) / 2 + 100;
@@ -222,18 +158,99 @@ function displayGameOverScreen() {
     },
     { once: true }
   ); // The event listener is removed after being invoked once
+
+  // Stop spawning enemies
+  spawner.stop();
 }
 
-function startGame() {
-  // Reset player's health
-  player.health = 100;
-  player.shieldHealth = 100;
+let spawnRateIncrease = 0.01; // Adjust this value as needed
+let spawner = new Spawner(2000, spawnRateIncrease, canvas, player, gameStarted);
 
-  // Clear enemies array
-  enemies = [];
+// Game loop
+function gameLoop() {
+  if (!paused) {
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Start the game loop again
-  gameLoop();
+    // Update and draw the player
+    player.update(canvas.width, canvas.height);
+    player.draw(ctx);
+
+    // debug spawner
+    let shouldSpawn = spawner.shouldSpawn();
+
+    // Spawn enemies
+    if (shouldSpawn) {
+      let newEnemy = spawner.spawnEnemy();
+      if (newEnemy !== null) {
+        enemies.push(newEnemy);
+      }
+    }
+
+    // Update and draw enemies
+    enemies.forEach((enemy) => {
+      enemy.update(player);
+      enemy.draw(ctx);
+
+      // Check for collisions between bullets and enemies
+      for (let bullet of player.bullets) {
+        let hitEnemy = bullet.checkCollisions(enemies);
+        if (hitEnemy) {
+          bullet.destroy();
+          hitEnemy.health -= 10; // Enemy takes damage
+
+          // If enemy's health reaches 0, destroy the enemy
+          if (hitEnemy.health <= 0) {
+            console.log("Enemy destroyed!");
+            hitEnemy.destroyed = true;
+          }
+        }
+      }
+
+      // Check for collision with player
+      if (checkCollision(player, enemy)) {
+        if (player.health < 0) player.health = 0; // Ensure health doesn't go below 0
+        enemy.destroyed = true;
+
+        // Log collision to the console
+        console.log("Collision detected!");
+      }
+
+      // Increment the score if the enemy is destroyed
+      if (enemy.destroyed) {
+        player.incrementScore(); // Increment the score
+      }
+
+      // Return false if the enemy is destroyed, true otherwise
+      return !enemy.destroyed;
+    });
+
+    // Draw the player's health and shield bar
+    player.drawHealthBar(ctx);
+    player.drawShieldBar(ctx);
+    player.drawScore(ctx);
+    player.regen();
+
+    // If the player's health reaches 0, display the game over screen
+    if (player.health <= 0) {
+      endGame();
+      return; // Stop the game loop
+    }
+  }
+
+  // Draw "Paused" text if the game is paused
+  if (paused) {
+    ctx.fillStyle = "black";
+    ctx.font = "30px 'Pixelify Sans'";
+    ctx.textAlign = "left";
+    ctx.fillText("⏸️ Paused", 10, canvas.height - 10);
+  }
+
+  player.bullets = player.bullets.filter((bullet) => !bullet.destroyed);
+  enemies = enemies.filter((enemy) => !enemy.destroyed);
+
+  // Call the game loop again on the next frame
+  requestAnimationFrame(gameLoop);
 }
 
 // Create a start button
@@ -247,7 +264,7 @@ startButton.addEventListener("click", function () {
   // Remove the start button
   startButton.remove();
 
-  gameStarted = true;
+  startGame();
 
   // Start the game loop
   gameLoop();

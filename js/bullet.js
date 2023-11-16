@@ -27,12 +27,17 @@ export class Bullet {
   }
 
   checkCollisions(enemies) {
-    for (let enemy of enemies) {
-      if (checkCollision(this, enemy)) {
-        enemy.takeDamage(this.damage);
-        return true; // Return true if a collision occurred
+    let i = enemies.length;
+    while (i--) {
+      if (checkCollision(this, enemies[i])) {
+        enemies[i].takeDamage(this.damage);
+        this.destroy();
+        if (enemies[i].health <= 0) {
+          enemies[i].destroyed = true; // Mark the enemy for removal
+          return enemies[i]; // Return the enemy that was hit
+        }
       }
     }
-    return false; // Return false if no collision occurred
+    return null; // Return null if no enemy was hit
   }
 }

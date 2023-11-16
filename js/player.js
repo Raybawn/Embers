@@ -4,14 +4,31 @@ import { Bullet } from "./bullet.js";
 // JavaScript
 export class Player {
   constructor(x, y) {
+    // Position
     this.x = x;
     this.y = y;
     this.width = 50;
     this.height = 50;
     this.speed = 5;
     this.direction = { up: false, down: false, left: false, right: false };
+
+    // Shield
     this.shieldHealth = 100;
+    this.shieldHealthMax = 100;
+
+    // Health
     this.health = 100;
+    this.healthMax = 100;
+
+    // Regeneration
+    this.regenRate = 0.1; // Amount of health/shield regenerated per second
+    this.regenDelay = 5; // Number of seconds to wait before starting to regenerate health/shield
+    this.timeOfLastDamage = Date.now();
+
+    // Score
+    this.score = 0;
+
+    // Bullets
     this.bullets = [];
     this.shootInterval = 30; // The player will shoot every 30 frames
     this.framesSinceLastShot = 0;
@@ -40,7 +57,7 @@ export class Player {
 
     ctx.strokeStyle = "black";
     ctx.lineWidth = 2;
-    ctx.strokeRect(45, 10, 100, 20); // Move the border to the right
+    ctx.strokeRect(45, 10, this.healthMax, 20); // Move the border to the right
 
     ctx.fillStyle = "black";
     ctx.font = "20px 'Pixelify Sans'";
@@ -53,23 +70,45 @@ export class Player {
 
     ctx.strokeStyle = "black";
     ctx.lineWidth = 2;
-    ctx.strokeRect(45, 40, 100, 20); // Move the border to the right
+    ctx.strokeRect(45, 40, this.shieldHealthMax, 20); // Move the border to the right
 
     ctx.fillStyle = "black";
     ctx.font = "20px 'Pixelify Sans'";
     ctx.fillText("SH", 10, 57); // Draw "Shield" text
   }
 
-  takeDamage(amount) {
-    // check if player has shield active, if yes reduce shield health, else reduce player health
-    if (this.shieldHealth > 0) {
-      this.shieldHealth -= amount;
-      if (this.shieldHealth < 0) this.shieldHealth = 0; // Ensure shield health doesn't go below 0
-      return;
-    } else {
-      this.health -= amount;
-      if (this.health < 0) this.health = 0; // Ensure health doesn't go below 0
+  drawScore(ctx) {
+    ctx.fillStyle = "black";
+    ctx.font = "20px 'Pixelify Sans'";
+    ctx.textAlign = "left";
+    ctx.fillText("Score: " + this.score, 10, 87); // Display the score
+  }
+
+  incrementScore() {
+    this.score++;
+  }
+
+  regen() {
+    // Regenerate health/shield if enough time has passed since last damage
+    if ((Date.now() - this.timeOfLastDamage) / 1000 >= this.regenDelay) {
+      if (this.shieldHealth < this.shieldHealthMax) {
+        this.shieldHealth = Math.min(
+          this.shieldHealth + this.regenRate,
+          this.shieldHealthMax
+        );
+      } else if (this.health < this.healthMax) {
+        this.health = Math.min(this.health + this.regenRate, this.healthMax);
+      }
     }
+  }
+
+  takeDamage(amount) {
+    if (this.shieldHealth > 0) {
+      this.shieldHealth = Math.max(this.shieldHealth - amount, 0); // Ensure shield health does not go below zero
+    } else {
+      this.health = Math.max(this.health - amount, 0); // Ensure health does not go below zero
+    }
+    this.timeOfLastDamage = Date.now(); // Update the time of last damage
   }
 
   update(canvasWidth, canvasHeight) {
