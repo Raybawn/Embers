@@ -5,33 +5,73 @@ export class PowerUp {
     this.y = y;
     this.width = 10;
     this.height = 10;
-    // Add more properties as needed
+    this.specialChance = 0.5;
   }
 
   draw(ctx) {
-    ctx.fillStyle = "blue";
+    ctx.fillStyle = this.isSpecial ? "yellow" : "blue";
     ctx.fillRect(this.x, this.y, this.width, this.height);
-  }
-
-  activate() {
-    // Activate the power-up
   }
 
   addToPowerUpList(powerUps) {
     powerUps.push(this);
   }
 
-  static getRandomTypes() {
+  static getRandomType() {
+    let randomNumber = Math.random();
+
     // Define all possible power-up types
-    const types = ["increaseSpeed", "increaseHealth", "increaseDropChance"];
+    // const types = ["increaseSpeed", "increaseHealth", "increaseFireRate"];
+    const types = ["increaseFireRate"];
+    const typesSpecial = ["aimbot"];
 
-    // Get two random types
-    const randomIndex1 = Math.floor(Math.random() * types.length);
-    let randomIndex2;
-    do {
-      randomIndex2 = Math.floor(Math.random() * types.length);
-    } while (randomIndex1 === randomIndex2);
+    // Get a random type
+    const randomIndex = Math.floor(Math.random() * types.length);
+    const randomIndexSpecial = Math.floor(Math.random() * typesSpecial.length);
 
-    return [types[randomIndex1], types[randomIndex2]];
+    if (randomNumber < this.specialChance) {
+      return typesSpecial[randomIndexSpecial];
+    } else {
+      return types[randomIndex];
+    }
+  }
+
+  // static getRandomTypes() {
+  //   // Define all possible power-up types
+  //   const types = ["increaseSpeed", "increaseHealth", "increaseFireRate"];
+
+  //   // Get two random types
+  //   const randomIndex1 = Math.floor(Math.random() * types.length);
+  //   let randomIndex2;
+  //   do {
+  //     randomIndex2 = Math.floor(Math.random() * types.length);
+  //   } while (randomIndex1 === randomIndex2);
+
+  //   return [types[randomIndex1], types[randomIndex2]];
+  // }
+
+  applyEffect(player) {
+    // Apply the effect of the power-up
+    switch (this.type) {
+      case "increaseSpeed":
+        console.log("speed increased");
+        player.speed += 0.05;
+        break;
+      case "increaseHealth":
+        console.log("health increased");
+        player.healthMax += 20;
+        player.health += 20;
+        break;
+      case "increaseFireRate":
+        console.log("fire rate increased");
+        player.fireRate += 10;
+        break;
+      case "aimbot":
+        console.log("aimbot active");
+        player.aimbot = true;
+        break;
+      default:
+        break;
+    }
   }
 }

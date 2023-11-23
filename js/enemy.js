@@ -46,8 +46,11 @@ export class Enemy {
 
     // If the random number is less than this.dropChance, drop an item
     if (randomNumber < this.dropChance) {
+      // Get a random power-up type
+      let type = PowerUp.getRandomType();
+
       // Create a new power-up
-      let powerUp = new PowerUp("increaseSpeed", this.x, this.y);
+      let powerUp = new PowerUp(type, this.x, this.y);
 
       // Add the power-up to the powerUps array
       this.game.addPowerUp(powerUp);

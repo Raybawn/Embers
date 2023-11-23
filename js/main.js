@@ -187,13 +187,19 @@ function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Update and draw the player
-    player.update(canvas.width, canvas.height);
+    player.update(canvas.width, canvas.height, enemies);
     player.draw(ctx);
 
     // powerUps
     for (let i = 0; i < game.powerUps.length; i++) {
       let powerUp = game.powerUps[i];
       powerUp.draw(ctx);
+
+      if (checkCollision(player, powerUp)) {
+        powerUp.applyEffect(player);
+        game.powerUps.splice(i, 1);
+        i--;
+      }
     }
 
     let shouldSpawn = spawner.shouldSpawn();

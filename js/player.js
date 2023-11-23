@@ -30,8 +30,9 @@ export class Player {
 
     // Bullets
     this.bullets = [];
-    this.shootInterval = 30; // The player will shoot every 30 frames
-    this.framesSinceLastShot = 0;
+    this.fireRate = 60;
+    this.timeOfLastFiring = 0;
+    this.aimbot = false;
   }
 
   draw(ctx) {
@@ -111,7 +112,41 @@ export class Player {
     this.timeOfLastDamage = Date.now(); // Update the time of last damage
   }
 
-  update(canvasWidth, canvasHeight) {
+  shootBullet(enemies) {
+    // Get the current time
+    let currentTime = Date.now();
+
+    // Calculate the time since the last shot
+    let timeSinceLastShot = currentTime - this.timeOfLastFiring;
+
+    // Calculate the interval between shots in milliseconds
+    let shotInterval = 60000 / this.fireRate; // 60000 milliseconds in a minute
+
+    // Shoot a bullet if enough time has passed since the last shot
+    if (timeSinceLastShot >= shotInterval) {
+      // Calculate the direction of the bullet
+      let dx = 0;
+      let dy = -1; // By default, the bullet goes upwards
+
+      // If auto-shoot is enabled, calculate the direction to the nearest enemy
+      if (this.aimbot && enemies.length > 0) {
+        let nearestEnemy = enemies.reduce((nearest, enemy) => {
+          let d1 = Math.hypot(nearest.x - this.x, nearest.y - this.y);
+          let d2 = Math.hypot(enemy.x - this.x, enemy.y - this.y);
+          return d1 < d2 ? nearest : enemy;
+        });
+
+        dx = nearestEnemy.x - this.x;
+        dy = nearestEnemy.y - this.y;
+      }
+
+      // Create a new bullet
+      this.bullets.push(new Bullet(this.x + 25, this.y, dx, dy));
+      this.timeOfLastFiring = currentTime; // Update the time of the last shot
+    }
+  }
+
+  update(canvasWidth, canvasHeight, enemies) {
     let dx = 0;
     let dy = 0;
 
@@ -141,12 +176,8 @@ export class Player {
       this.y = newY;
     }
 
-    // Shoot a bullet if enough frames have passed since the last shot
-    this.framesSinceLastShot++;
-    if (this.framesSinceLastShot >= this.shootInterval) {
-      this.bullets.push(new Bullet(this.x + 25, this.y));
-      this.framesSinceLastShot = 0;
-    }
+    // Shoot bullets
+    this.shootBullet(enemies);
 
     // Update bullets and remove off-screen bullets
     this.bullets = this.bullets.filter((bullet) => {
